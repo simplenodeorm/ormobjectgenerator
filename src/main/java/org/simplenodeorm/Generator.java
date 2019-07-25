@@ -106,7 +106,7 @@ public class Generator {
 
         if (StringUtils.isNotEmpty(s)) {
             for (String m : s.split(",")) {
-                this.globalImportBlaclist.add(m);
+                this.globalImportBlaclist.add(m.trim());
             }
         }
 
@@ -124,7 +124,7 @@ public class Generator {
                         if (hs == null) {
                             modelImportBlacklist.put(model, hs = new HashSet<String>());
                         }
-                        hs.add(m);
+                        hs.add(m.trim());
                     }
                 }
             }
@@ -185,18 +185,19 @@ public class Generator {
 
             boolean firstone = true;
             while (res.next()) {
-                String tname = toCamelCase(res.getString(3), true);
-                if (!globalImportBlaclist.contains(tname)) {
+                String model = toCamelCase(res.getString(3), true);
+                int seq = res.getInt(9);
+                if ((seq == 1) && !globalImportBlaclist.contains(model)) {
                     Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
 
-                    if ((hs2 == null) || !hs2.contains(tname)) {
+                    if ((hs2 == null) || !hs2.contains(model)) {
                         if (firstone) {
                             pw.println("    // foreign key relationships");
                             firstone = false;
                         }
 
-                        pw.println("    get" + tname + "() { return this.getFieldValue(\"" + toCamelCase(tname, false) + "\"); }");
-                        pw.println("    set" + tname + "(value) { this.setFieldValue(\"" + toCamelCase(tname, false) + "\", value); }");
+                        pw.println("    get" + model + "() { return this.getFieldValue(\"" + toCamelCase(model, false) + "\"); }");
+                        pw.println("    set" + model + "(value) { this.setFieldValue(\"" + toCamelCase(model, false) + "\", value); }");
                         pw.println();
                     }
                 }
@@ -238,7 +239,7 @@ public class Generator {
             pw.println("    constructor() {");
             pw.println("        super(");
             pw.println("            '" + toCamelCase(table, true) + "', // model name");
-            pw.println("            'model/" + toCamelCase(table, true)  + ".js', // relative model path");
+            pw.println("            'model/" + toCamelCase(table, true) + ".js', // relative model path");
             pw.println("            '" + table + "', // table");
             pw.println("            [");
 
@@ -316,7 +317,7 @@ public class Generator {
                     pw.println(",");
                     pw.print("                     defaultValue: \"" + ci.getDefaultValue() + "\"");
                 }
-                
+
                 if (ci.isAutoincrement()) {
                     pw.println(",");
                     pw.print("                     autoIncrementGenerator: \"" + config.getProperty("global.autoincrement.generator") + "\"");
@@ -326,9 +327,8 @@ public class Generator {
                         pw.println(",");
                         pw.print("                     autoIncrementGenerator: \"" + autoinc + "\"");
                     }
-                }     
-                
-                
+                }
+
                 pw.println();
                 if (indx < (columns.size() - 1)) {
                     pw.println("                },");
@@ -343,8 +343,7 @@ public class Generator {
             pw.println("       );");
             pw.println("    }");
             res.close();
-
-            /*
+/*
             res = dmd.getImportedKeys(null, config.getProperty("db.schema"), table);
 
             boolean firstone = true;
@@ -365,8 +364,8 @@ public class Generator {
                     }
                 }
             }
-             */
-            pw.println("}");
+              */
+                 pw.println("}");
             pw.println();
 
             pw.println("module.exports = function(metaData) {");
@@ -514,6 +513,7 @@ public class Generator {
                 return false;
         }
     }
+
     private boolean isLengthValid(int sqlType) {
         switch (sqlType) {
             case java.sql.Types.CHAR:
@@ -524,7 +524,6 @@ public class Generator {
             default:
                 return false;
         }
-
 
     }
 
