@@ -30,7 +30,7 @@ import org.apache.commons.lang3.StringUtils;
 public class Generator {
 
     private Properties config;
-    private Set<String> globalImportBlaclist = new HashSet();
+    private Set<String> globalImportBlacklist = new HashSet();
     private Map<String, Set<String>> modelImportBlacklist = new HashMap();
 
     /**
@@ -108,7 +108,7 @@ public class Generator {
 
         if (StringUtils.isNotEmpty(s)) {
             for (String m : s.split(",")) {
-                this.globalImportBlaclist.add(m.trim());
+                this.globalImportBlacklist.add(m.trim());
             }
         }
 
@@ -182,27 +182,17 @@ public class Generator {
 
             pw.println();
             res.close();
-
-            res = dmd.getImportedKeys(null, config.getProperty("db.schema"), table);
-
             boolean firstone = true;
-            while (res.next()) {
-                String model = toCamelCase(res.getString(3), true);
-                int seq = res.getInt(9);
-                if ((seq == 1) && !globalImportBlaclist.contains(model)) {
-                    Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
-
-                    if ((hs2 == null) || !hs2.contains(model)) {
-                        if (firstone) {
-                            pw.println("    // foreign key relationships");
-                            firstone = false;
-                        }
-
-                        pw.println("    get" + model + "() { return this.getFieldValue(\"" + toCamelCase(model, false) + "\"); }");
-                        pw.println("    set" + model + "(value) { this.setFieldValue(\"" + toCamelCase(model, false) + "\", value); }");
-                        pw.println();
-                    }
-                }
+            List <FKInfo> relationships = this.getRelationships(dmd, table);
+            for (FKInfo fk : relationships) {
+                if (firstone) {
+                   pw.println("    // foreign key relationships");
+                   firstone = false;
+               }
+               String model = toCamelCase(fk.getTargetTable(), true);
+               pw.println("    get" + model + "() { return this.getFieldValue(\"" + toCamelCase(model, false) + "\"); }");
+               pw.println("    set" + model + "(value) { this.setFieldValue(\"" + toCamelCase(model, false) + "\", value); }");
+               pw.println();
             }
 
             pw.println("}");
@@ -386,7 +376,7 @@ public class Generator {
             while (res.next()) {
                 String targetTable = res.getString(3);
                 String model = toCamelCase(targetTable, true);
-                if (!globalImportBlaclist.contains(model)) {
+                if (!globalImportBlacklist.contains(model)) {
                     Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
 
                     if ((hs2 == null) || !hs2.contains(model)) {
@@ -411,7 +401,7 @@ public class Generator {
             while (res.next()) {
                 String targetTable = res.getString(3);
                 String model = toCamelCase(targetTable, true);
-                if (!globalImportBlaclist.contains(model)) {
+                if (!globalImportBlacklist.contains(model)) {
                     Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
 
                     if ((hs2 == null) || !hs2.contains(model)) {
