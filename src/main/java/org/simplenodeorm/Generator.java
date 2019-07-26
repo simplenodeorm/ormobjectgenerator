@@ -183,16 +183,16 @@ public class Generator {
             pw.println();
             res.close();
             boolean firstone = true;
-            List <FKInfo> relationships = this.getRelationships(dmd, table);
+            List<FKInfo> relationships = this.getRelationships(dmd, table);
             for (FKInfo fk : relationships) {
                 if (firstone) {
-                   pw.println("    // foreign key relationships");
-                   firstone = false;
-               }
-               String model = toCamelCase(fk.getTargetTable(), true);
-               pw.println("    get" + model + "() { return this.getFieldValue(\"" + toCamelCase(model, false) + "\"); }");
-               pw.println("    set" + model + "(value) { this.setFieldValue(\"" + toCamelCase(model, false) + "\", value); }");
-               pw.println();
+                    pw.println("    // foreign key relationships");
+                    firstone = false;
+                }
+                String model = toCamelCase(fk.getTargetTable(), true);
+                pw.println("    get" + model + "() { return this.getFieldValue(\"" + toCamelCase(model, false) + "\"); }");
+                pw.println("    set" + model + "(value) { this.setFieldValue(\"" + toCamelCase(model, false) + "\", value); }");
+                pw.println();
             }
 
             pw.println("}");
@@ -283,9 +283,8 @@ public class Generator {
             Collections.sort(columns);
 
             int indx = 0;
-            String comma = "";
             for (ColumnInfo ci : columns) {
-                pw.println("                {  //" + indx);
+                pw.println("                {  // " + indx);
                 pw.println("                     fieldName:" + "\"" + ci.getFieldName() + "\",");
                 pw.println("                     type:" + "\"" + ci.getType() + "\",");
                 pw.print("                     columnName:" + "\"" + ci.getColumnName() + "\"");
@@ -440,33 +439,37 @@ public class Generator {
             if (pklist.size() == fk.getColumns().size()) {
                 fklist.add(fk);
             }
-
-            if (fklist.isEmpty()) {
-                pw.println("            [], // one-to-one relationships");
-            } else {
-                pw.println("            [  // one-to-one relationships");
-                int indx = 0;
-                for (FKInfo fki : fklist) {
-                    pw.println("                { // " + indx++);
+        }
+        if (fklist.isEmpty()) {
+            pw.println("            [], // one-to-one relationships");
+        } else {
+            pw.println("            [  // one-to-one relationships");
+            int indx = 0;
+            for (FKInfo fki : fklist) {
+                pw.println("                { // " + indx++);
+                if ((fki.getColumns().size() == 1)
+                    && !fki.getColumns().get(0).getSourceColumn().equals(fki.getColumns().get(0).getTargetColumn())) {
+                    pw.println("                   fieldName: \"" + toCamelCase(fki.getColumns().get(0).getSourceColumn(), false) + "\",");
+                } else {
                     pw.println("                   fieldName: \"" + toCamelCase(fki.getTargetTable(), false) + "\",");
-                    pw.println("                   type: 1,");
-                    pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                    pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
-                    pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
-                    pw.println("                   status: \"enabled\",");
-                    pw.println("                   joinColumns: {");
-                    pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
-                    pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
-                    pw.println("                   }");
-
-                    if (indx < fklist.size() - 1) {
-                        pw.println("                },");
-                    } else {
-                        pw.println("                }");
-                    }
                 }
-                pw.println("            ],");
+                pw.println("                   type: 1,");
+                pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
+                pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
+                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
+                pw.println("                   status: \"enabled\",");
+                pw.println("                   joinColumns: {");
+                pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
+                pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
+                pw.println("                   }");
+
+                if (indx < fklist.size() - 1) {
+                    pw.println("                },");
+                } else {
+                    pw.println("                }");
+                }
             }
+            pw.println("            ],");
         }
     }
 
@@ -479,33 +482,37 @@ public class Generator {
             if (pklist.size() > fk.getColumns().size()) {
                 fklist.add(fk);
             }
-
-            if (fklist.isEmpty()) {
-                pw.println("            [], // one-to-many relationships");
-            } else {
-                pw.println("            [  // one-to-many relationships");
-                int indx = 0;
-                for (FKInfo fki : fklist) {
-                    pw.println("                { // " + indx++);
+        }
+        if (fklist.isEmpty()) {
+            pw.println("            [], // one-to-many relationships");
+        } else {
+            pw.println("            [  // one-to-many relationships");
+            int indx = 0;
+            for (FKInfo fki : fklist) {
+                pw.println("                { // " + indx++);
+                if ((fki.getColumns().size() == 1)
+                    && !fki.getColumns().get(0).getSourceColumn().equals(fki.getColumns().get(0).getTargetColumn())) {
+                    pw.println("                   fieldName: \"" + toCamelCase(fki.getColumns().get(0).getSourceColumn(), false) + "\",");
+                } else {
                     pw.println("                   fieldName: \"" + toCamelCase(fki.getTargetTable(), false) + "\",");
-                    pw.println("                   type: 2,");
-                    pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                    pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
-                    pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
-                    pw.println("                   status: \"enabled\",");
-                    pw.println("                   joinColumns: {");
-                    pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
-                    pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
-                    pw.println("                   }");
-
-                    if (indx < fklist.size() - 1) {
-                        pw.println("                },");
-                    } else {
-                        pw.println("                }");
-                    }
                 }
-                pw.println("            ],");
+                pw.println("                   type: 2,");
+                pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
+                pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
+                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
+                pw.println("                   status: \"enabled\",");
+                pw.println("                   joinColumns: {");
+                pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
+                pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
+                pw.println("                   }");
+
+                if (indx < fklist.size() - 1) {
+                    pw.println("                },");
+                } else {
+                    pw.println("                }");
+                }
             }
+            pw.println("            ],");
         }
     }
 
