@@ -398,7 +398,7 @@ public class Generator {
             res = dmd.getExportedKeys(null, config.getProperty("db.schema"), table);
             fkinfo = null;
             while (res.next()) {
-                String targetTable = res.getString(3);
+                String targetTable = res.getString(7);
                 String model = toCamelCase(targetTable, true);
                 if (!globalImportBlacklist.contains(model)) {
                     Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
@@ -430,13 +430,29 @@ public class Generator {
         return retval;
     }
 
+    private boolean isTargetPrimaryKey(DatabaseMetaData dmd, FKInfo fk) throws Exception {
+        boolean retval = false;
+             Set<String> pklist = this.getPrimaryKeyColumnNames(dmd, fk.getTargetTable());
+             if (pklist.size() == fk.getColumns().size()) {
+                 boolean match = true;
+                 for (FKColumnInfo fkc : fk.getColumns()) {
+                     if (!pklist.contains(fkc.getTargetColumn())) {
+                         match = false;
+                         break;
+                     }
+                 }
+                 
+                 retval = match;
+             }
+             
+             return retval;
+    }   
+  
     private void loadOneToOneRelationships(DatabaseMetaData dmd, PrintWriter pw, List<FKInfo> rlist) throws Exception {
         List<FKInfo> fklist = new ArrayList();
 
         for (FKInfo fk : rlist) {
-            Set<String> pklist = this.getPrimaryKeyColumnNames(dmd, fk.getTargetTable());
-
-            if (pklist.size() == fk.getColumns().size()) {
+            if (isTargetPrimaryKey(dmd, fk)) {
                 fklist.add(fk);
             }
         }
@@ -477,9 +493,7 @@ public class Generator {
         List<FKInfo> fklist = new ArrayList();
 
         for (FKInfo fk : rlist) {
-            Set<String> pklist = this.getPrimaryKeyColumnNames(dmd, fk.getTargetTable());
-
-            if (pklist.size() > fk.getColumns().size()) {
+            if (!isTargetPrimaryKey(dmd, fk)) {
                 fklist.add(fk);
             }
         }
