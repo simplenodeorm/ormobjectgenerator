@@ -97,7 +97,7 @@ public class ColumnInfo implements Comparable<ColumnInfo>  {
         int retval = pkindex.compareTo(o.getPkindex());
         
         if (retval == 0) {
-            retval = this.fieldName.compareTo(o.getFieldName());
+            retval = this.columnName.compareTo(o.getColumnName());
         }
         
         return retval;

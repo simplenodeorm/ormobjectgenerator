@@ -19,6 +19,7 @@ public class FKInfo {
     private String name;
     private boolean cascadeUpdate;
     private boolean cascadeDelete;
+    private boolean imported;
     private List<FKColumnInfo> columns = new ArrayList();
 
     public String getTargetTable() {
@@ -69,6 +70,12 @@ public class FKInfo {
     public void setCascadeDelete(boolean cascadeDelete) {
         this.cascadeDelete = cascadeDelete;
     }
-    
-    
-}
+
+    public boolean isImported() {
+        return imported;
+    }
+
+    public void setImported(boolean imported) {
+        this.imported = imported;
+    }
+ }
