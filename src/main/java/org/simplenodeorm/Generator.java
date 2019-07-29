@@ -286,12 +286,12 @@ public class Generator {
             for (ColumnInfo ci : columns) {
                 pw.println("                {  // " + indx);
                 pw.println("                     fieldName:" + "\"" + ci.getFieldName() + "\",");
-                pw.println("                     type:" + "\"" + ci.getType() + "\",");
+                pw.println("                     type:" +  ci.getType() + ",");
                 pw.print("                     columnName:" + "\"" + ci.getColumnName() + "\"");
 
                 if (ci.getLength() > 0) {
                     pw.println(",");
-                    pw.print("                     length:" + "\"" + ci.getLength() + "\"");
+                    pw.print("                     length:" + ci.getLength());
                 }
 
                 if (ci.isRequired()) {
@@ -474,6 +474,15 @@ public class Generator {
                 pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
                 pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
                 pw.println("                   status: \"enabled\",");
+                
+                if (fki.isCascadeDelete()) {
+                    pw.println("                   cascadeDelete: true,");
+                }
+                if (fki.isCascadeUpdate()) {
+                    pw.println("                   cascadeUpdate: true,");
+                }
+                
+                
                 pw.println("                   joinColumns: {");
                 pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
                 pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
