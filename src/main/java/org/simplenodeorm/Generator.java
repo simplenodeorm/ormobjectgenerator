@@ -139,7 +139,7 @@ public class Generator {
         try {
             File f = getModelFile(table);
             pw = new PrintWriter(f);
-            pw.println("\"use strict\"");
+            pw.println("\"use strict\";");
             pw.println();
             pw.println("const Model = require('../main/Model.js');");
             pw.println();
@@ -223,7 +223,7 @@ public class Generator {
         try {
             File f = getMetaDataFile(table);
             pw = new PrintWriter(f);
-            pw.println("\"use strict\"");
+            pw.println("\"use strict\";");
             pw.println();
             pw.println("const MetaData = require('../main/MetaData.js');");
             pw.println();
@@ -286,7 +286,7 @@ public class Generator {
             for (ColumnInfo ci : columns) {
                 pw.println("                {  // " + indx);
                 pw.println("                     fieldName:" + "\"" + ci.getFieldName() + "\",");
-                pw.println("                     type:" +  ci.getType() + ",");
+                pw.println("                     type:\"" +  ci.getType() + "\",");
                 pw.print("                     columnName:" + "\"" + ci.getColumnName() + "\"");
 
                 if (ci.getLength() > 0) {
@@ -488,7 +488,7 @@ public class Generator {
                 pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
                 pw.println("                   }");
 
-                if (indx < fklist.size() - 1) {
+                if (indx < fklist.size()) {
                     pw.println("                },");
                 } else {
                     pw.println("                }");
@@ -529,7 +529,7 @@ public class Generator {
                 pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
                 pw.println("                   }");
 
-                if (indx < fklist.size() - 1) {
+                if (indx < fklist.size()) {
                     pw.println("                },");
                 } else {
                     pw.println("                }");
@@ -593,7 +593,7 @@ public class Generator {
         try {
             File f = getRepositoryFile(table);
             pw = new PrintWriter(f);
-            pw.println("\"use strict\"");
+            pw.println("\"use strict\";");
             pw.println();
             pw.println("const poolAlias = '" + config.getProperty("repository.pool.alias") + "';");
             pw.println("const Repository = require('../main/Repository.js');");
