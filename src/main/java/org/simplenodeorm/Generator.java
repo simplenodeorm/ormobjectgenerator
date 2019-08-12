@@ -141,7 +141,7 @@ public class Generator {
             pw = new PrintWriter(f);
             pw.println("\"use strict\";");
             pw.println();
-            pw.println("const Model = require('../main/Model.js');");
+            pw.println("const Model = require('@simplenodeorm/simplenodeorm/main/Model.js');");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends Model {");
             pw.println("    constructor(metaData) {");
@@ -225,7 +225,7 @@ public class Generator {
             pw = new PrintWriter(f);
             pw.println("\"use strict\";");
             pw.println();
-            pw.println("const MetaData = require('../main/MetaData.js');");
+            pw.println("const MetaData = require('@simplenodeorm/simplenodeorm/main/MetaData.js').MetaData;");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends MetaData {");
             pw.println("    constructor() {");
@@ -471,7 +471,7 @@ public class Generator {
                 }
                 pw.println("                   type: 1,");
                 pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
+                pw.println("                   targetModule: \"model/" + toCamelCase(fki.getTargetTable(), true) + ".js\",");
                 pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
                 pw.println("                   status: \"enabled\",");
                 
@@ -521,7 +521,7 @@ public class Generator {
                 }
                 pw.println("                   type: 2,");
                 pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                pw.println("                   targetModule: \"../model/" + toCamelCase(fki.getTargetTable(), false) + ".js\",");
+                pw.println("                   targetModule: \"model/" + toCamelCase(fki.getTargetTable(), true) + ".js\",");
                 pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
                 pw.println("                   status: \"enabled\",");
                 pw.println("                   joinColumns: {");
@@ -596,7 +596,7 @@ public class Generator {
             pw.println("\"use strict\";");
             pw.println();
             pw.println("const poolAlias = '" + config.getProperty("repository.pool.alias") + "';");
-            pw.println("const Repository = require('../main/Repository.js');");
+            pw.println("const Repository = require('@simplenodeorm/simplenodeorm/main/Repository.js');");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends Repository {");
             pw.println("    constructor(metaData) {");
