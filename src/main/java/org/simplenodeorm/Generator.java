@@ -141,7 +141,7 @@ public class Generator {
             pw = new PrintWriter(f);
             pw.println("\"use strict\";");
             pw.println();
-            pw.println("const Model = require('@simplenodeorm/simplenodeorm/main/Model.js');");
+            pw.println("const Model = require('@simplenodeorm/simplenodeorm/main/Model');");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends Model {");
             pw.println("    constructor(metaData) {");
@@ -225,7 +225,7 @@ public class Generator {
             pw = new PrintWriter(f);
             pw.println("\"use strict\";");
             pw.println();
-            pw.println("const MetaData = require('@simplenodeorm/simplenodeorm/main/MetaData.js').MetaData;");
+            pw.println("const MetaData = require('@simplenodeorm/simplenodeorm/main/MetaData').MetaData;");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends MetaData {");
             pw.println("    constructor() {");
@@ -596,7 +596,7 @@ public class Generator {
             pw.println("\"use strict\";");
             pw.println();
             pw.println("const poolAlias = '" + config.getProperty("repository.pool.alias") + "';");
-            pw.println("const Repository = require('@simplenodeorm/simplenodeorm/main/Repository.js');");
+            pw.println("const Repository = require('@simplenodeorm/simplenodeorm/main/Repository');");
             pw.println();
             pw.println("class " + f.getName().replace(".js", "") + " extends Repository {");
             pw.println("    constructor(metaData) {");
