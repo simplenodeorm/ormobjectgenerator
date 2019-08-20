@@ -16,11 +16,13 @@ import java.util.List;
 public class FKInfo {
 
     private String targetTable;
-    private String name;
+    private String targetModel;
+    private String fieldName;
     private boolean cascadeUpdate;
     private boolean cascadeDelete;
-    private boolean imported;
-    private List<FKColumnInfo> columns = new ArrayList();
+    private String sourceColumns;
+    private String targetColumns;
+    private String type;
 
     public String getTargetTable() {
         return targetTable;
@@ -30,29 +32,20 @@ public class FKInfo {
         this.targetTable = targetTable;
     }
 
-    public String getName() {
-        return name;
+    public String getTargetModel() {
+        return targetModel;
     }
 
-    public void setName(String name) {
-        this.name = name;
+    public void setTargetModel(String targetModel) {
+        this.targetModel = targetModel;
     }
 
-    public List<FKColumnInfo> getColumns() {
-        Collections.sort(columns);
-        return columns;
+    public String getFieldName() {
+        return fieldName;
     }
 
-    public void setColumns(List<FKColumnInfo> columns) {
-        this.columns = columns;
-    }
-
-    public void addColumn(String sourceColumn, String targetColumn, Integer seq) {
-        FKColumnInfo fkc = new FKColumnInfo();
-        fkc.setSourceColumn(sourceColumn);
-        fkc.setTargetColumn(targetColumn);
-        fkc.setSeq(seq);
-        columns.add(fkc);
+    public void setFieldName(String fieldName) {
+        this.fieldName = fieldName;
     }
 
     public boolean isCascadeUpdate() {
@@ -71,11 +64,28 @@ public class FKInfo {
         this.cascadeDelete = cascadeDelete;
     }
 
-    public boolean isImported() {
-        return imported;
+    public String getSourceColumns() {
+        return sourceColumns;
     }
 
-    public void setImported(boolean imported) {
-        this.imported = imported;
+    public void setSourceColumns(String sourceColumns) {
+        this.sourceColumns = sourceColumns;
     }
+
+    public String getTargetColumns() {
+        return targetColumns;
+    }
+
+    public void setTargetColumns(String targetColumns) {
+        this.targetColumns = targetColumns;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
  }

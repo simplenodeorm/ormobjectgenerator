@@ -28,10 +28,7 @@ import org.apache.commons.lang3.StringUtils;
  * @author tucker87
  */
 public class Generator {
-
     private Properties config;
-    private Set<String> globalImportBlacklist = new HashSet();
-    private Map<String, Set<String>> modelImportBlacklist = new HashMap();
 
     /**
      * @param args the command line arguments
@@ -67,7 +64,6 @@ public class Generator {
                 throw new Exception("invalid configuration file - " + f.getPath());
             }
 
-            loadImportBlackLists();
             conn = getConnection();
             DatabaseMetaData dmd = conn.getMetaData();
             String[] tableNames = config.getProperty("table.names").split(",");
@@ -103,35 +99,6 @@ public class Generator {
         }
     }
 
-    private void loadImportBlackLists() {
-        String s = config.getProperty("global.imported.model.ignore");
-
-        if (StringUtils.isNotEmpty(s)) {
-            for (String m : s.split(",")) {
-                this.globalImportBlacklist.add(m.trim());
-            }
-        }
-
-        Enumeration e = config.keys();
-        while (e.hasMoreElements()) {
-            String key = e.nextElement().toString();
-
-            if (key.endsWith(".imported.model.ignore")) {
-                s = config.getProperty(key);
-                if (StringUtils.isNotEmpty(s)) {
-                    String model = key.substring(0, key.indexOf("."));
-                    for (String m : s.split(",")) {
-                        Set<String> hs = modelImportBlacklist.get(model);
-
-                        if (hs == null) {
-                            modelImportBlacklist.put(model, hs = new HashSet<String>());
-                        }
-                        hs.add(m.trim());
-                    }
-                }
-            }
-        }
-    }
 
     private void generateModel(String table, DatabaseMetaData dmd) throws Exception {
         PrintWriter pw = null;
@@ -183,7 +150,7 @@ public class Generator {
             pw.println();
             res.close();
             boolean firstone = true;
-            List<FKInfo> relationships = this.getRelationships(dmd, table);
+            List<FKInfo> relationships = this.getRelationships(table);
             for (FKInfo fk : relationships) {
                 if (firstone) {
                     pw.println("    // foreign key relationships");
@@ -333,10 +300,10 @@ public class Generator {
             pw.println("            ],");
             res.close();
 
-            List<FKInfo> relationships = getRelationships(dmd, table);
-            loadOneToOneRelationships(dmd, pw, relationships);
-            loadOneToManyRelationships(dmd, pw, relationships);
-            loadManyToManyRelationships(dmd, pw, relationships);
+            List<FKInfo> relationships = getRelationships(table);
+            loadRelationships("oto", pw, relationships);
+            loadRelationships("otm", pw, relationships);
+            loadRelationships("mtm", pw, relationships);
 
             pw.println("       );");
             pw.println("    }");
@@ -363,116 +330,80 @@ public class Generator {
         }
     }
 
-    private List<FKInfo> getRelationships(DatabaseMetaData dmd, String table) throws Exception {
+    private List<FKInfo> getRelationships(String table) throws Exception {
         List<FKInfo> retval = new ArrayList();
 
-        ResultSet res = null;
+        Enumeration e = config.keys();
+        
+        while (e.hasMoreElements()) {
+            String key = e.nextElement().toString();
+            if (key.startsWith("fk.definition." + table + "-")) {
+                String[] info = config.getProperty(key).split(",");
+                FKInfo fk = new FKInfo();
+                fk.setType(info[0]);
+                if ("otm".equals(info[0])) {
+                    fk.setCascadeDelete(true);
+                    fk.setCascadeUpdate(true);
+                }    
+                fk.setTargetTable(info[1]);
+                fk.setTargetModel(info[2]);
+                fk.setFieldName(info[3]);
+                String cols = info[4];
 
-        try {
-            res = dmd.getImportedKeys(null, config.getProperty("db.schema"), table);
-            List<FKInfo> fklist = new ArrayList();
-            FKInfo fkinfo = null;
-            while (res.next()) {
-                String targetTable = res.getString(3);
-                String model = toCamelCase(targetTable, true);
-                if (!globalImportBlacklist.contains(model)) {
-                    Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
+                int pos = cols.indexOf("=");
 
-                    if ((hs2 == null) || !hs2.contains(model)) {
-                        if ((fkinfo == null) || !targetTable.equals(fkinfo.getTargetTable())) {
-                            fkinfo = new FKInfo();
-                            fkinfo.setTargetTable(targetTable);
-                            fkinfo.setName(res.getString("FK_NAME"));
-                            fkinfo.setCascadeDelete(res.getInt("DELETE_RULE") == DatabaseMetaData.importedKeyCascade);
-                            fkinfo.setCascadeDelete(res.getInt("UPDATE_RULE") == DatabaseMetaData.importedKeyCascade);
-                            retval.add(fkinfo);
-                        }
-
-                        fkinfo.addColumn(res.getString("FKCOLUMN_NAME"), res.getString("PKCOLUMN_NAME"), res.getInt("KEY_SEQ"));
-                    }
-                }
-            }
-
-            res.close();
-
-            res = dmd.getExportedKeys(null, config.getProperty("db.schema"), table);
-            fkinfo = null;
-            while (res.next()) {
-                String targetTable = res.getString(7);
-                String model = toCamelCase(targetTable, true);
-                if (!globalImportBlacklist.contains(model)) {
-                    Set<String> hs2 = modelImportBlacklist.get(toCamelCase(table, true));
-
-                    if ((hs2 == null) || !hs2.contains(model)) {
-                        if ((fkinfo == null) || !targetTable.equals(fkinfo.getTargetTable())) {
-                            fkinfo = new FKInfo();
-                            fkinfo.setTargetTable(targetTable);
-                            fkinfo.setName(res.getString("PK_NAME"));
-                            fkinfo.setCascadeDelete(res.getInt("DELETE_RULE") == DatabaseMetaData.importedKeyCascade);
-                            fkinfo.setCascadeDelete(res.getInt("UPDATE_RULE") == DatabaseMetaData.importedKeyCascade);
-                            retval.add(fkinfo);
-                        }
-
-                        fkinfo.addColumn(res.getString("PKCOLUMN_NAME"), res.getString("FKCOLUMN_NAME"), res.getInt("KEY_SEQ"));
-                    }
-                }
-            }
-
-        } finally {
-            if (res != null) {
-                try {
-                    res.close();
-                } catch (Exception ex) {
-                }
+                fk.setSourceColumns(cols.substring(0, pos).replace(".", ","));
+                fk.setTargetColumns(cols.substring(pos+1).replace(".", ","));
+                
+                retval.add(fk);
             }
         }
 
         return retval;
     }
 
-    private boolean isTargetPrimaryKey(DatabaseMetaData dmd, FKInfo fk) throws Exception {
-        boolean retval = false;
-             Set<String> pklist = this.getPrimaryKeyColumnNames(dmd, fk.getTargetTable());
-             if (pklist.size() == fk.getColumns().size()) {
-                 boolean match = true;
-                 for (FKColumnInfo fkc : fk.getColumns()) {
-                     if (!pklist.contains(fkc.getTargetColumn())) {
-                         match = false;
-                         break;
-                     }
-                 }
-                 
-                 retval = match;
-             }
-             
-             return retval;
-    }   
-  
-    private void loadOneToOneRelationships(DatabaseMetaData dmd, PrintWriter pw, List<FKInfo> rlist) throws Exception {
+    private void loadRelationships(String type,  PrintWriter pw, List<FKInfo> rlist) throws Exception {
         List<FKInfo> fklist = new ArrayList();
-
+        String typeName = "on-to-one";
+        switch(type) {
+            case "oto":
+                typeName = "on-to-one";
+                break;
+            case "otm":
+                typeName = "on-to-many";
+                break;
+            case "mtm":
+                typeName = "many-to-many";
+                break;
+        }        
+        
         for (FKInfo fk : rlist) {
-            if (isTargetPrimaryKey(dmd, fk)) {
+            if (type.equals(fk.getType())) {
                 fklist.add(fk);
             }
         }
         if (fklist.isEmpty()) {
-            pw.println("            [], // one-to-one relationships");
+            pw.println("            [], // " + typeName + " relationships");
         } else {
-            pw.println("            [  // one-to-one relationships");
+            pw.println("            [  // " + typeName + " relationships");
             int indx = 0;
             for (FKInfo fki : fklist) {
                 pw.println("                { // " + indx++);
-                if ((fki.getColumns().size() == 1)
-                    && !fki.getColumns().get(0).getSourceColumn().equals(fki.getColumns().get(0).getTargetColumn())) {
-                    pw.println("                   fieldName: \"" + toCamelCase(fki.getColumns().get(0).getSourceColumn(), false) + "\",");
-                } else {
-                    pw.println("                   fieldName: \"" + toCamelCase(fki.getTargetTable(), false) + "\",");
-                }
-                pw.println("                   type: 1,");
-                pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                pw.println("                   targetModule: \"model/" + toCamelCase(fki.getTargetTable(), true) + ".js\",");
-                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
+                pw.println("                   fieldName: \"" + fki.getFieldName() + "\",");
+                switch(type) {
+                    case "oto":
+                        pw.println("                   type: 1,");
+                        break;
+                    case "otm":
+                        pw.println("                   type: 2,");
+                        break;
+                    case "mtm":
+                        pw.println("                   type: 3,");
+                        break;
+                }        
+                pw.println("                   targetModelName: \"" + fki.getTargetModel() + "\",");
+                pw.println("                   targetModule: \"model/" + fki.getTargetModel() + ".js\",");
+                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\"");
                 pw.println("                   status: \"enabled\",");
                 
                 if (fki.isCascadeDelete()) {
@@ -484,8 +415,8 @@ public class Generator {
                 
                 
                 pw.println("                   joinColumns: {");
-                pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
-                pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
+                pw.println("                       sourceColumns: \"" + fki.getSourceColumns() + "\",");
+                pw.println("                       targetColumns: \"" + fki.getTargetColumns() + "\",");
                 pw.println("                   }");
 
                 if (indx < fklist.size()) {
@@ -496,77 +427,6 @@ public class Generator {
             }
             pw.println("            ],");
         }
-    }
-
-    private void loadOneToManyRelationships(DatabaseMetaData dmd, PrintWriter pw, List<FKInfo> rlist) throws Exception {
-        List<FKInfo> fklist = new ArrayList();
-
-        for (FKInfo fk : rlist) {
-            if (!isTargetPrimaryKey(dmd, fk)) {
-                fklist.add(fk);
-            }
-        }
-        if (fklist.isEmpty()) {
-            pw.println("            [], // one-to-many relationships");
-        } else {
-            pw.println("            [  // one-to-many relationships");
-            int indx = 0;
-            for (FKInfo fki : fklist) {
-                pw.println("                { // " + indx++);
-                if ((fki.getColumns().size() == 1)
-                    && !fki.getColumns().get(0).getSourceColumn().equals(fki.getColumns().get(0).getTargetColumn())) {
-                    pw.println("                   fieldName: \"" + toCamelCase(fki.getColumns().get(0).getSourceColumn(), false) + "\",");
-                } else {
-                    pw.println("                   fieldName: \"" + toCamelCase(fki.getTargetTable(), false) + "\",");
-                }
-                pw.println("                   type: 2,");
-                pw.println("                   targetModelName: \"" + toCamelCase(fki.getTargetTable(), true) + "\",");
-                pw.println("                   targetModule: \"model/" + toCamelCase(fki.getTargetTable(), true) + ".js\",");
-                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
-                pw.println("                   status: \"enabled\",");
-                pw.println("                   joinColumns: {");
-                pw.println("                       sourceColumns: \"" + getSourceColumnList(fki.getColumns()) + "\",");
-                pw.println("                       targetColumns: \"" + getTargetColumnList(fki.getColumns()) + "\",");
-                pw.println("                   }");
-
-                if (indx < fklist.size()) {
-                    pw.println("                },");
-                } else {
-                    pw.println("                }");
-                }
-            }
-            pw.println("            ],");
-        }
-    }
-
-    private void loadManyToManyRelationships(DatabaseMetaData dmd, PrintWriter pw, List<FKInfo> rlist) throws Exception {
-        pw.println("            [] // many-to-many relationships");
-    }
-
-    private String getSourceColumnList(List<FKColumnInfo> columns) {
-        StringBuilder retval = new StringBuilder(64);
-
-        String comma = "";
-        for (FKColumnInfo c : columns) {
-            retval.append(comma);
-            retval.append(c.getSourceColumn());
-            comma = ",";
-        }
-
-        return retval.toString();
-    }
-
-    private String getTargetColumnList(List<FKColumnInfo> columns) {
-        StringBuilder retval = new StringBuilder(64);
-
-        String comma = "";
-        for (FKColumnInfo c : columns) {
-            retval.append(comma);
-            retval.append(c.getTargetColumn());
-            comma = ",";
-        }
-
-        return retval.toString();
     }
 
     private Set<String> getPrimaryKeyColumnNames(DatabaseMetaData dmd, String table) throws Exception {
