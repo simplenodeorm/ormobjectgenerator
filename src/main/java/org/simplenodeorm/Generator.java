@@ -403,7 +403,7 @@ public class Generator {
                 }        
                 pw.println("                   targetModelName: \"" + fki.getTargetModel() + "\",");
                 pw.println("                   targetModule: \"model/" + fki.getTargetModel() + ".js\",");
-                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\"");
+                pw.println("                   targetTableName: \"" + fki.getTargetTable() + "\",");
                 pw.println("                   status: \"enabled\",");
                 
                 if (fki.isCascadeDelete()) {
